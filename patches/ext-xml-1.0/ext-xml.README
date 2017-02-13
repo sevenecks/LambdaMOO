@@ -1,0 +1,127 @@
+
+This is a binding of expat to MOO providing two functions for parsing XML.
+
+It was written by Ken Fox <fox@mars.org>.
+
+This patch's "home page" (for now) is
+   http://www2.mars.org/~fox/moo/expat-binding/
+
+expat is an XML Parser Toolkit available at 
+   http://www.jclark.com/xml/expat.html
+
+The binding is covered under the following license:
+
+--- 
+
+Copyright 2000 by Ken Fox.   All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation.
+
+KEN FOX DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+KEN FOX BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+
+---
+
+See the expat home page for the expat license.
+
+To use this modification:
+1)  Get expat.zip from the site above.  Unzip it.  Compile it.  Remember
+    where this directory is.
+
+2)  Get the latest LambdaMOO server (1.8.1) from 
+    http://download.sourceforge.net/lambdamoo/LambdaMOO-1.8.1.tar.gz
+    and unpack it into its own directory.
+
+3)  Get the expat-binding distribution from
+    http://www2.mars.org/~fox/moo/expat-binding/dist/ext-xml-1.0.tar.gz
+    and unpack it into its own directory.
+
+4)  Copy the following files from the ext-xml directory to the MOO-1.8.1
+    directory: ext-xml.c
+               ext-xml.patch
+
+5)  cd to where you unpacked the MOO server and copied ext-xml.c and 
+    ext-xml.patch
+
+6)  Apply the patch: patch < ext-xml.patch
+    Included in the distribution are my copies of the modified 1.8.1 files
+    for reference.   
+    The modified files are:
+         storage.h   - added xml data storage type 
+         Makefile.in - added ext-xml.c to CSRCS and added refs to expat code
+         extensions.c - added lines to call register_xml
+    The rest of the binding lives in ext-xml.c.
+
+7)  Edit Makefile.in: find where it says 
+    EXPAT = /home/fox/src/dist/expat
+    And modify it to point to where you unpacked expat.zip.
+
+8)  ./configure and make as usual.
+
+There are two new functions once this is installed:
+  LIST xml_parse_tree(STR string)
+  LIST xml_parse_document(STR string)
+  
+Both return a list of the form:
+   {tag, attributes alist, text, children}
+where:
+   STR tag            - tag name
+   LIST attributes    - alist of attributes {{STR key, STR value}, ...}
+   STR text           - text between the tags
+   LIST children      - children of this node
+
+The difference between xml_parse_tree and xml_parse_document lies in
+where text between tags ends up.  xml_parse_tree puts it all in the
+"text" element of the node.  xml_parse_document puts it in the
+children element.  This may be clearer with examples.  The indendation
+of the return values is for illustrative purposes only.
+
+;xml_parse_tree("<XML>abc</XML>") 
+=> {{"XML",        -- tag name
+     {},           -- attribute alist 
+     "abc",        -- text
+     {}}}          -- children
+
+;xml_parse_tree("<list><item>foo</item><item>bar</item></list>") 
+=> {{"list",       -- tag name of root
+     {},           -- attributes
+     "",           -- text
+     {{"item",     -- tag name of first child
+       {},         -- attributes of first child 
+       "foo",      -- text of first child
+       {}          -- children of first child 
+      },         
+      {"item",     -- tag name of second child
+       {},         -- attributes of second child
+       "bar",      -- text of second child
+       {}          -- children of second child
+      }           
+     }             -- end of children of root
+    }
+   }
+
+;xml_parse_document("<document coolness=\"yes\">The <EM>brown cow</EM> " +
+                    "lept over " +
+                    "the <EM>blue moon</EM></document>") 
+=> {"document",
+    {{"coolness", "yes"}},
+    "",
+    {"The ",
+     {"EM", {}, "", {"brown cow"}}
+     "lept over ",
+     {"EM", {}, "", {"blue moon"}}
+    }}
+
+
+
+
+
